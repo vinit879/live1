@@ -33,7 +33,7 @@ def get_channel_count(model):
 # Asynchronous function to fetch data
 async def fetch_data(url, auth):
     try:
-        response = await asyncio.to_thread(requests.get, url, auth=auth, timeout=20)
+        response = await asyncio.to_thread(requests.get, url, auth=auth, timeout=1)
         response.raise_for_status()
         return response.text
     except Exception as e:
@@ -139,7 +139,7 @@ async def fetch_site_data(site):
                 auth=auth,
                 data=search_body,
                 headers={'Content-Type': 'application/xml'},
-                timeout=20  # Increased timeout to 20 seconds
+                timeout=1  # Increased timeout to 20 seconds
             )
 
             if search_response.status_code == 200:
@@ -255,7 +255,7 @@ async def fetch_site_data(site):
 
     context['nvr_status'] = nvr_status
 
-    cache.set(cache_key, context, timeout=12000)
+    cache.set(cache_key, context, timeout=0)
     return context
 
 # Asynchronous function to fetch data for all sites
@@ -392,6 +392,7 @@ def alert_dashboard(request):
     })
 
 # Display alerts view
+@login_required
 def display_alerts(request):
     alerts = Alert.objects.filter(is_resolved=False, is_dismissed=False).exclude(alert_type__in=['storage', 'device']).order_by('-created_at')
     total_alerts = alerts.count()  # Calculate the total number of alerts
@@ -403,23 +404,27 @@ def system_alerts(request):
     return render(request, 'system_alerts.html', {'alerts': alerts})
 
 # Resolve alert view
+@login_required
 def resolve_alert(request, alert_id):
     alert = get_object_or_404(Alert, id=alert_id)
     alert.resolve()
     return redirect('display_alerts')
 
 # Dismiss alert view
+@login_required
 def dismiss_alert(request, alert_id):
     alert = get_object_or_404(Alert, id=alert_id)
     alert.dismiss()
     return redirect('display_alerts')
 
 # Resolved alerts view
+@login_required
 def resolved_alerts(request):
     alerts = Alert.objects.filter(is_resolved=True)
     return render(request, 'HM1/resolved_alerts.html', {'alerts': alerts})
 
 # Dismissed alerts view
+@login_required
 def dismissed_alerts(request):
     alerts = Alert.objects.filter(is_dismissed=True)
     return render(request, 'HM1/dismissed_alerts.html', {'alerts': alerts})
